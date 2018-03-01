@@ -138,10 +138,10 @@ questemp_data <- read_csv('output_data/Questemp/questemp_data.csv')
 # -------------
 
 # Define configuration variables
-obsvar = 'ENMO'
-medvar = 'ENMO_rm' 
-maxgap = 60
-k = 181
+obsvar <- 'ENMO'
+medvar <- 'ENMO_rm' 
+maxgap <- 60
+k <- 181
 
 # Label and flag sequences by particpant, grouping for use with rollmedian()
 axivity_data <- prep_rolling_median(axivity_data, 
@@ -175,10 +175,10 @@ axivity_data <- axivity_data %>%
 # -----------
 
 # Define configuration variables
-obsvar = 'heartrate'
-medvar = 'heartrate_rm' 
-maxgap = 60
-k = 181
+obsvar <- 'heartrate'
+medvar <- 'heartrate_rm' 
+maxgap <- 60
+k <- 181
 
 # Label and flag sequences by particpant, grouping for use with rollmedian()
 wahoo_data <- prep_rolling_median(wahoo_data, 
@@ -212,10 +212,10 @@ wahoo_data <- wahoo_data %>%
 # -----------
 
 # Define configuration variables
-obsvar = 'heartrate'
-medvar = 'heartrate_rm' 
-maxgap = 60
-k = 181
+obsvar <- 'heartrate'
+medvar <- 'heartrate_rm' 
+maxgap <- 60
+k <- 181
 
 # Label and flag sequences by particpant, grouping for use with rollmedian()
 polar_data <- prep_rolling_median(polar_data, 
@@ -248,11 +248,11 @@ polar_data <- polar_data %>%
 # Questemp data
 # --------------
 
-# Define configuration variables
-obsvar = 'eartemp'
-medvar = 'eartemp_rm' 
-maxgap = 6
-k = 19
+# Configuration
+obsvar <- 'eartemp'
+medvar <- 'eartemp_rm'
+maxgap <- 6
+k <- 19
 
 # Set out-of-range values to NA
 questemp_data <- questemp_data %>% 
