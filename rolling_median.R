@@ -122,9 +122,19 @@ prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
 # A wrapper function for performing the rolling median calculation
 
 calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar, 
-                                maxgap, k) {
+                                maxgap, k, lwr_lim=NA, upr_lim=NA) {
     # Load data
     df <- read_csv(infile)
+
+    # Set out-of-range values of obsvar to NA if limits have been provided
+    if (!is.na(lwr_lim)) {
+        # Set values of obsvar which are lower than lower limit to NA
+        df[!is.na(df[[obsvar]]) & df[[obsvar]] < lwr_lim, obsvar] <- NA
+    }
+    if (!is.na(upr_lim)) {
+        # Set values of obsvar which are higher than upper limit to NA
+        df[!is.na(df[[obsvar]]) & df[[obsvar]] > upr_lim, obsvar] <- NA
+    }
     
     # Label and flag sequences by particpant, grouping for use with rollmedian
     df <- prep_rolling_median(df, idvar = 'noquestioner', obsvar = obsvar, 
@@ -198,7 +208,9 @@ calc_rolling_median(infile  = 'Questemp/questemp_data.csv',
                     medvar  = 'eartemp_rm',
                     rawvar  = 'eartemp_raw',
                     maxgap  = 6,
-                    k       = 19
+                    k       = 19,
+                    lwr_lim = 32,
+                    upr_lim = 40
 )
 
 # Leave the top-level data folder
