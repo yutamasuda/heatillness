@@ -3,6 +3,9 @@
 # Repository: https://github.com/yutamasuda/heatillness/
 # License: MIT - See the LICENSE file for more details
 
+# Before executing this script, make sure that the import_*.R and 
+# rolling_median.R scripts have already been executed without error.
+
 # ------
 # Setup
 # ------
@@ -43,10 +46,19 @@ start_end[, c('starttime_str', 'endtime_str')] <- NULL
 # Read datasets
 # --------------
 
-axivity_data <- fread('output_data/Axivity/axivity_data.csv')
-wahoo_data <- fread('output_data/Heart rate/Wahoo/wahoo_data.csv')
-polar_data <- fread('output_data/Heart rate/Polar/polar_data.csv')
-questemp_data <- fread('output_data/Questemp/questemp_data.csv')
+axivity_data <- fread('output_data/Axivity/axivity_data_rollmedian.csv')
+wahoo_data <- fread('output_data/Heart rate/Wahoo/wahoo_data_rollmedian.csv')
+polar_data <- fread('output_data/Heart rate/Polar/polar_data_rollmedian.csv')
+questemp_data <- fread('output_data/Questemp/questemp_data_rollmedian.csv')
+
+# -----------------------
+# Remove extra variables
+# -----------------------
+
+#axivity_data[,ENMO_raw:=NULL]
+#wahoo_data[,heartrate_raw:=NULL]
+#polar_data[,heartrate_raw:=NULL]
+#questemp_data[,eartemp_raw:=NULL]
 
 # --------------------
 # Create key variable
@@ -74,12 +86,14 @@ str_to_datetime <- function(timestamp_str) {
 
 round_to_interval <- function(timestamp) {
     format(strptime('1970-01-01', '%Y-%m-%d', tz = 'UTC') + 
-               round(as.numeric(timestamp)/10)*10, '%H:%M:%S', tz = sampling_tz)
+               round(as.numeric(timestamp)/10)*10, '%H:%M:%S', 
+           tz = sampling_tz)
 }
 
 ceiling_to_interval <- function(timestamp) {
     format(strptime('1970-01-01', '%Y-%m-%d', tz = 'UTC') + 
-               ceiling(as.numeric(timestamp)/10)*10, '%H:%M:%S', tz = sampling_tz)
+               ceiling(as.numeric(timestamp)/10)*10, '%H:%M:%S', 
+           tz = sampling_tz)
 }
 
 axivity_data$timestamp <- str_to_datetime(axivity_data$timestamp)
