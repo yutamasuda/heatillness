@@ -27,7 +27,8 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # --------------------------------------------------------------------------
 
 # The zoo::rollmedian function will fail if there are any sequences of values 
-# containing less than k consecutive non-NA values or if any sequences start 
+# containing less than k consecutive non-NA values, where k is the window 
+# size used with the rollmedian function, or if any data sequences start 
 # or end with any NA values. To prevent the function from returning an error, 
 # we have defined the label_span_groups and flag_na_on_ends functions. They 
 # label and flag the data so that you can filter and group to prevent these 
@@ -38,16 +39,16 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # --------------------
 # Label the groups of long-running sequences of NAs and groups of the 
 # non-NA values between them, where "long-running" means the length of an 
-# uninterrupted sequence of NAs is greater than the value "k" used when 
-# calculating rolling medians. A shorter "maxgap" timespan instead. Similarly 
-# flag those sequences by storing TRUE in a column "longspan". Similarly, 
-# flag sequences shorter than "k", reflected here with the variable "minspan" 
-# by storing TRUE in a column "shortspan".
+# uninterrupted sequence of NAs is greater than the value of "maxgap". 
+# Flag those sequences by storing TRUE in a column "longspan". Similarly, 
+# flag sequences of non-NA values shorter than "k" (the rollmedian window 
+# size), by storing TRUE in a column "shortspan". "k" should be an odd 
+# integer and "maxgap" should be less than or equal to "k".
 
-label_span_groups <- function(df, obsvar, maxgap=3, minspan=3) {
+label_span_groups <- function(df, obsvar, maxgap=3, k=3) {
     is.na.rle <- rle(is.na(df[[obsvar]]))
     is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths >= maxgap
-    is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < minspan
+    is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
     
     prvlng <- 0
     prvsrt <- 0
