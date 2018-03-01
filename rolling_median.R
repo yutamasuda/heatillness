@@ -3,6 +3,9 @@
 # Repository: https://github.com/yutamasuda/heatillness/
 # License: MIT - See the LICENSE file for more details
 
+# Before executing this script, make sure that the import_*.R scripts  
+# have already been executed without error.
+
 # ------
 # Setup
 # ------
@@ -30,9 +33,11 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # containing less than k consecutive non-NA values, where k is the window 
 # size used with the rollmedian function, or if any data sequences start 
 # or end with any NA values. To prevent the function from returning an error, 
-# we have defined the label_span_groups and flag_na_on_ends functions. They 
+# we have defined the label_span_groups() and flag_na_on_ends() functions. They 
 # label and flag the data so that you can filter and group to prevent these 
-# errors.
+# errors. Two additional convencience functions, prep_rolling_median() and 
+# calc_rolling_median(), are used as "wrappers" for the above two functions 
+# to automate the processing of multiple input files for better code reuse.
 
 # --------------------
 # label_span_groups()
@@ -111,194 +116,90 @@ prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
     df
 }
 
+# ----------------------
+# calc_rolling_median()
+# ----------------------
+# A wrapper function for performing the rolling median calculation
+
+calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar, 
+                                maxgap, k) {
+    # Load data
+    df <- read_csv(infile)
+    
+    # Label and flag sequences by particpant, grouping for use with rollmedian
+    df <- prep_rolling_median(df, idvar = 'noquestioner', obsvar = obsvar, 
+                              maxgap = maxgap, k = k) 
+    
+    # Save data that we will not be able to use for calculating medians
+    nomedian <- df %>%
+        filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
+    
+    # Calculate the rolling median
+    df <- df %>% 
+        filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
+        group_by(noquestioner, grpnum) %>% 
+        tq_mutate(select=obsvar, mutate_fun=rollmedian, k=k, fill=c(NA),
+                  align=c("center"), col_rename = medvar)
+    
+    # Add the excluded data back into the dataset and sort by timestamp
+    df <- bind_rows(list(ungroup(df), nomedian)) %>% 
+        arrange(noquestioner, timestamp)
+    
+    # Clean up the dataset by removing and renaming variables
+    df <- df %>% select(-grpnum, -longspan, -shortspan, -natrim)
+    names(df)[names(df) == obsvar] <- rawvar
+    names(df)[names(df) == medvar] <- obsvar
+    
+    # Save results
+    write.csv(df, outfile, row.names = FALSE)
+}
+
 # --------------------------------------------------------------------------
 # Main Routine
 # --------------------------------------------------------------------------
 
-# After reading in each dataset from the "output_data" folder, these will 
-# be processed individually in the following sections, each section being 
-# nearly identical, then output will be written in the final section. To 
-# avoid repetition of code, it would be nice to put more of these sections
-# into functions, but dplyr makes it difficult to use variables passed 
-# through function parameters as column names, especially with group_by().
-# We are using group_by() for this because it allows us to use tq_mutate() to 
-# run rollmedian() groupwise by each "noquestioner".
+# Enter the top-level data folder
+setwd('output_data')
 
-# --------------
-# Read datasets
-# --------------
+# Process axivity data
+calc_rolling_median(infile  = 'Axivity/axivity_data.csv',
+                    outfile = 'Axivity/axivity_data_rollmedian.csv',
+                    obsvar  = 'ENMO',
+                    medvar  = 'ENMO_rm',
+                    rawvar  = 'ENMO_raw',
+                    maxgap  = 60,
+                    k       = 181
+)
 
-axivity_data <- read_csv('output_data/Axivity/axivity_data.csv')
-wahoo_data <- read_csv('output_data/Heart rate/Wahoo/wahoo_data.csv')
-polar_data <- read_csv('output_data/Heart rate/Polar/polar_data.csv')
-questemp_data <- read_csv('output_data/Questemp/questemp_data.csv')
+# Process wahoo data
+calc_rolling_median(infile  = 'Heart rate/Wahoo/wahoo_data.csv',
+                    outfile = 'Heart rate/Wahoo/wahoo_data_rollmedian.csv',
+                    obsvar  = 'heartrate',
+                    medvar  = 'heartrate_rm',
+                    rawvar  = 'heartrate_raw',
+                    maxgap  = 60,
+                    k       = 181
+)
 
-# -------------
-# Axivity data
-# -------------
+# Process polar data
+calc_rolling_median(infile  = 'Heart rate/Polar/polar_data.csv',
+                    outfile = 'Heart rate/Polar/polar_data_rollmedian.csv',
+                    obsvar  = 'heartrate',
+                    medvar  = 'heartrate_rm',
+                    rawvar  = 'heartrate_raw',
+                    maxgap  = 60,
+                    k       = 181
+)
 
-# Define configuration variables
-obsvar <- 'ENMO'
-medvar <- 'ENMO_rm' 
-maxgap <- 60
-k <- 181
+# Process questemp data
+calc_rolling_median(infile  = 'Questemp/questemp_data.csv',
+                    outfile = 'Questemp/questemp_data_rollmedian.csv',
+                    obsvar  = 'eartemp',
+                    medvar  = 'eartemp_rm',
+                    rawvar  = 'eartemp_raw',
+                    maxgap  = 6,
+                    k       = 19
+)
 
-# Label and flag sequences by particpant, grouping for use with rollmedian()
-axivity_data <- prep_rolling_median(axivity_data, 
-                                    idvar = 'noquestioner', 
-                                    obsvar = obsvar, 
-                                    maxgap = maxgap, 
-                                    k = k) 
-
-# Save data that we will not be able to use for calculating medians
-nomedian <- axivity_data %>%
-    filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
-
-# Calculate the rolling median
-axivity_data <- axivity_data %>% 
-    filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
-    group_by(noquestioner, grpnum) %>% 
-    tq_mutate(select=obsvar, mutate_fun=rollmedian, k=k, fill=c(NA),
-              align=c("center"), col_rename = medvar)
-
-# Add the excluded data back into the dataset and sort by timestamp
-axivity_data <- bind_rows(list(ungroup(axivity_data), nomedian)) %>% 
-    arrange(noquestioner, timestamp)
-
-# Clean up the dataset by removing and renaming variables
-axivity_data <- axivity_data %>% 
-    select(-grpnum, -longspan, -shortspan, -natrim) %>% 
-    rename(ENMO_raw = ENMO, ENMO = ENMO_rm)
-
-# -----------
-# Wahoo data
-# -----------
-
-# Define configuration variables
-obsvar <- 'heartrate'
-medvar <- 'heartrate_rm' 
-maxgap <- 60
-k <- 181
-
-# Label and flag sequences by particpant, grouping for use with rollmedian()
-wahoo_data <- prep_rolling_median(wahoo_data, 
-                                  idvar = 'noquestioner', 
-                                  obsvar = obsvar, 
-                                  maxgap = maxgap, 
-                                  k = k) 
-
-# Save data that we will not be able to use for calculating medians
-nomedian <- wahoo_data %>%
-    filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
-
-# Calculate the rolling median
-wahoo_data <- wahoo_data %>% 
-    filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
-    group_by(noquestioner, grpnum) %>% 
-    tq_mutate(select=obsvar, mutate_fun=rollmedian, k=k, fill=c(NA),
-              align=c("center"), col_rename = medvar)
-
-# Add the excluded data back into the dataset and sort by timestamp
-wahoo_data <- bind_rows(list(ungroup(wahoo_data), nomedian)) %>% 
-    arrange(noquestioner, timestamp)
-
-# Clean up the dataset by removing and renaming variables
-wahoo_data <- wahoo_data %>% 
-    select(-grpnum, -longspan, -shortspan, -natrim) %>% 
-    rename(heartrate_raw = heartrate, heartrate = heartrate_rm)
-
-# -----------
-# Polar data
-# -----------
-
-# Define configuration variables
-obsvar <- 'heartrate'
-medvar <- 'heartrate_rm' 
-maxgap <- 60
-k <- 181
-
-# Label and flag sequences by particpant, grouping for use with rollmedian()
-polar_data <- prep_rolling_median(polar_data, 
-                                  idvar = 'noquestioner', 
-                                  obsvar = obsvar, 
-                                  maxgap = maxgap, 
-                                  k = k) 
-
-# Save data that we will not be able to use for calculating medians
-nomedian <- polar_data %>%
-    filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
-
-# Calculate the rolling median
-polar_data <- polar_data %>% 
-    filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
-    group_by(noquestioner, grpnum) %>% 
-    tq_mutate(select=obsvar, mutate_fun=rollmedian, k=k, fill=c(NA),
-              align=c("center"), col_rename = medvar)
-
-# Add the excluded data back into the dataset and sort by timestamp
-polar_data <- bind_rows(list(ungroup(polar_data), nomedian)) %>% 
-    arrange(noquestioner, timestamp)
-
-# Clean up the dataset by removing and renaming variables
-polar_data <- polar_data %>% 
-    select(-grpnum, -longspan, -shortspan, -natrim) %>% 
-    rename(heartrate_raw = heartrate, heartrate = heartrate_rm)
-
-# --------------
-# Questemp data
-# --------------
-
-# Configuration
-obsvar <- 'eartemp'
-medvar <- 'eartemp_rm'
-maxgap <- 6
-k <- 19
-
-# Set out-of-range values to NA
-questemp_data <- questemp_data %>% 
-    mutate(eartemp = ifelse(eartemp > 40 | eartemp < 32, NA, eartemp))
-
-# Label and flag sequences by particpant, grouping for use with rollmedian()
-questemp_data <- prep_rolling_median(questemp_data, 
-                                     idvar = 'noquestioner', 
-                                     obsvar = obsvar, 
-                                     maxgap = maxgap, 
-                                     k = k) 
-
-# Save data that we will not be able to use for calculating medians
-nomedian <- questemp_data %>%
-    filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
-
-# Calculate the rolling median
-questemp_data <- questemp_data %>% 
-    filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
-    group_by(noquestioner, grpnum) %>% 
-    tq_mutate(select=obsvar, mutate_fun=rollmedian, k=k, fill=c(NA),
-              align=c("center"), col_rename = medvar)
-
-# Add the excluded data back into the dataset and sort by timestamp
-questemp_data <- bind_rows(list(ungroup(questemp_data), nomedian)) %>% 
-    arrange(noquestioner, timestamp)
-
-# Clean up the dataset by removing and renaming variables
-questemp_data <- questemp_data %>% 
-    select(-grpnum, -longspan, -shortspan, -natrim) %>% 
-    rename(eartemp_raw = eartemp, eartemp = eartemp_rm)
-
-# -----------------
-# Save the results
-# -----------------
-
-# Write the data to CSV files
-write.csv(axivity_data, 
-          'output_data/Axivity/axivity_data_rollmedian.csv', 
-          row.names = FALSE)
-write.csv(wahoo_data, 
-          'output_data/Heart rate/Wahoo/wahoo_data_rollmedian.csv', 
-          row.names = FALSE)
-write.csv(polar_data, 
-          'output_data/Heart rate/Polar/polar_data_rollmedian.csv', 
-          row.names = FALSE)
-write.csv(questemp_data, 
-          'output_data/Questemp/questemp_data_rollmedian.csv', 
-          row.names = FALSE)
+# Leave the top-level data folder
+setwd('..')
