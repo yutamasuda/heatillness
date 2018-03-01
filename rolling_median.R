@@ -50,18 +50,18 @@ label_span_groups <- function(df, obsvar, maxgap=3, k=3) {
     is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths >= maxgap
     is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
     
-    prvlng <- 0
-    prvsrt <- 0
+    is.prev.span.long <- 0
+    is.prev.span.short <- 0
     grpnum <- 0
     rownum <- 0
     for (i in 1:length(is.na.rle$lengths)) {
         if (grpnum == 0 | 
-            is.na.rle$longspan[i] != prvlng | 
-            is.na.rle$shortspan[i] != prvsrt) {
+            is.na.rle$longspan[i] != is.prev.span.long | 
+            is.na.rle$shortspan[i] != is.prev.span.short) {
             grpnum <- grpnum + 1
         }
-        prvlng <- is.na.rle$longspan[i]
-        prvsrt <- is.na.rle$shortspan[i]
+        is.prev.span.long <- is.na.rle$longspan[i]
+        is.prev.span.short <- is.na.rle$shortspan[i]
         
         rownums <- (rownum + 1):(rownum + is.na.rle$lengths[i])
         df[rownums, 'grpnum'] <- grpnum
@@ -92,7 +92,7 @@ flag_na_on_ends <- function(df, obsvar) {
 # ----------------------
 # prep_rolling_median()
 # ----------------------
-# Declare a convenience function for the labelling and flagging operations
+# A wrapper function for performing the labelling and flagging operations
 
 prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
     # Add new columns to dataframe to store group labels and boolean flags
@@ -108,7 +108,6 @@ prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
         df[id_rows,] <- label_span_groups(df[id_rows,], obsvar, maxgap, k)
         df[id_rows,] <- flag_na_on_ends(df[id_rows,], obsvar)
     }
-    
     df
 }
 
@@ -118,7 +117,12 @@ prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
 
 # After reading in each dataset from the "output_data" folder, these will 
 # be processed individually in the following sections, each section being 
-# nearly identical, then output will be written in the final section.
+# nearly identical, then output will be written in the final section. To 
+# avoid repetition of code, it would be nice to put more of these sections
+# into functions, but dplyr makes it difficult to use variables passed 
+# through function parameters as column names, especially with group_by().
+# We are using group_by() for this because it allows us to use tq_mutate() to 
+# run rollmedian() groupwise by each "noquestioner".
 
 # --------------
 # Read datasets
