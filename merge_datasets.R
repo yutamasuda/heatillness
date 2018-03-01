@@ -124,8 +124,8 @@ sensor_data <- merge(sensor_data, questemp_data[, -c('timestamp')],
 # Trim
 # -----
 
-# Trim off data for observations which occur earlier than 5 minutes before
-# the reported "starttime" and also those which occured later than 5 minutes 
+# Trim off data for observations which occurred earlier than 5 minutes before
+# the reported "starttime" and also those which occurred later than 5 minutes 
 # after the reported "endtime".
 
 # Create time variable from timestamp and fill time NAs with interval value
