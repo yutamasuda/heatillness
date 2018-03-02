@@ -51,27 +51,43 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # greater than 2 and "maxgap" should be a positive integer less than "k".
 
 label_span_groups <- function(df, obsvar, maxgap, k) {
+    # Find run lengths of runs of NAs and non-NAs
     is.na.rle <- rle(is.na(df[[obsvar]]))
+    
+    # Find long spans of NAs and short spans of non-NAs
     is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths > maxgap
     is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
     
+    # Initialize loop flags and counters
     is.prev.span.long <- 0
     is.prev.span.short <- 0
     grpnum <- 0
     rownum <- 0
+    
+    # Label and flag groups of long, short, and usable spans
     for (i in 1:length(is.na.rle$lengths)) {
+        # Start a new group if this is the first group or if we 
+        # have transitioned into or out of a long or short span
         if (grpnum == 0 | 
             is.na.rle$longspan[i] != is.prev.span.long | 
             is.na.rle$shortspan[i] != is.prev.span.short) {
+            # Start a new span group by incrementing group counter
             grpnum <- grpnum + 1
         }
+        
+        # Determine if this span group should be flagged as long or short
         is.prev.span.long <- is.na.rle$longspan[i]
         is.prev.span.short <- is.na.rle$shortspan[i]
         
+        # Determine the row number sequence comprising this span group
         rownums <- (rownum + 1):(rownum + is.na.rle$lengths[i])
+        
+        # Label this span group and flag if this is a long or short span
         df[rownums, 'grpnum'] <- grpnum
         df[rownums, 'longspan'] <- is.na.rle$longspan[i]
         df[rownums, 'shortspan'] <- is.na.rle$shortspan[i]
+        
+        # Increment row counter to last row number of this group
         rownum <- rownum + is.na.rle$lengths[i]
     }
     df
@@ -80,13 +96,19 @@ label_span_groups <- function(df, obsvar, maxgap, k) {
 # ------------------
 # flag_na_on_ends()
 # ------------------
-# Flag with TRUE all observations at beginning and end of a group which are NA
+# Flag with TRUE all NA observations at the beginning or end of a span group
 
 flag_na_on_ends <- function(df, obsvar) {
+    # For each span group, flag the leading or trailing NAs, if any
     for (grp in unique(df$grpnum)) {
+        # Copy the observations to a vector
         v <- as.vector(df[df$grpnum == grp,][[obsvar]])
+        
+        # Compare the length of this vector to the NA-trimmed length
         lt <- length(v) - length(na.trim(v, 'left'))
         rt <- length(v) - length(na.trim(v, 'right'))
+        
+        # Use the length differences to flag the NAs with TRUE
         if (lt) df[df$grpnum == grp,][['natrim']][0:lt] <- TRUE
         if (rt) df[df$grpnum == grp,][['natrim']][
             (length(v) - rt + 1):length(v)] <- TRUE
