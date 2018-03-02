@@ -47,12 +47,12 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # uninterrupted sequence of NAs is greater than the value of "maxgap". 
 # Flag those sequences by storing TRUE in a column "longspan". Similarly, 
 # flag sequences of non-NA values shorter than "k" (the rollmedian window 
-# size), by storing TRUE in a column "shortspan". "k" should be an odd 
-# integer and "maxgap" should be less than or equal to "k".
+# size), by storing TRUE in a column "shortspan". "k" should be an odd integer 
+# greater than 2 and "maxgap" should be a positive integer less than "k".
 
-label_span_groups <- function(df, obsvar, maxgap=3, k=3) {
+label_span_groups <- function(df, obsvar, maxgap=2, k=3) {
     is.na.rle <- rle(is.na(df[[obsvar]]))
-    is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths >= maxgap
+    is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths > maxgap
     is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
     
     is.prev.span.long <- 0
@@ -177,7 +177,7 @@ calc_rolling_median(infile  = 'Axivity/axivity_data.csv',
                     obsvar  = 'ENMO',
                     medvar  = 'ENMO_rm',
                     rawvar  = 'ENMO_raw',
-                    maxgap  = 60,
+                    maxgap  = 59,
                     k       = 181
 )
 
@@ -187,7 +187,7 @@ calc_rolling_median(infile  = 'Heart rate/Wahoo/wahoo_data.csv',
                     obsvar  = 'heartrate',
                     medvar  = 'heartrate_rm',
                     rawvar  = 'heartrate_raw',
-                    maxgap  = 60,
+                    maxgap  = 59,
                     k       = 181
 )
 
@@ -197,7 +197,7 @@ calc_rolling_median(infile  = 'Heart rate/Polar/polar_data.csv',
                     obsvar  = 'heartrate',
                     medvar  = 'heartrate_rm',
                     rawvar  = 'heartrate_raw',
-                    maxgap  = 60,
+                    maxgap  = 59,
                     k       = 181
 )
 
@@ -207,7 +207,7 @@ calc_rolling_median(infile  = 'Questemp/questemp_data.csv',
                     obsvar  = 'eartemp',
                     medvar  = 'eartemp_rm',
                     rawvar  = 'eartemp_raw',
-                    maxgap  = 6,
+                    maxgap  = 5,
                     k       = 19,
                     lwr_lim = 32,
                     upr_lim = 40
