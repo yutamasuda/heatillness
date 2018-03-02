@@ -50,7 +50,7 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # size), by storing TRUE in a column "shortspan". "k" should be an odd integer 
 # greater than 2 and "maxgap" should be a positive integer less than "k".
 
-label_span_groups <- function(df, obsvar, maxgap=2, k=3) {
+label_span_groups <- function(df, obsvar, maxgap, k) {
     is.na.rle <- rle(is.na(df[[obsvar]]))
     is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths > maxgap
     is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
