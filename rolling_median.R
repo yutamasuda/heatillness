@@ -35,7 +35,7 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # or end with any NA values. To prevent the function from returning an error, 
 # we have defined the label_span_groups() and flag_na_on_ends() functions. They 
 # label and flag the data so that you can filter and group to prevent these 
-# errors. Two additional convencience functions, prep_rolling_median() and 
+# errors. Two additional convenience functions, prep_rolling_median() and 
 # calc_rolling_median(), are used as "wrappers" for the above two functions 
 # to automate the processing of multiple input files for better code reuse.
 
@@ -51,10 +51,10 @@ pacman::p_load(tidyr, zoo, tidyquant)
 # greater than 2 and "maxgap" should be a positive integer less than "k".
 
 label_span_groups <- function(df, obsvar, maxgap, k) {
-    # Find run lengths of runs of NAs and non-NAs
+    # Find lengths of runs of NAs and non-NAs
     is.na.rle <- rle(is.na(df[[obsvar]]))
     
-    # Find long spans of NAs and short spans of non-NAs
+    # Find long spans (> maxgap) of NAs and short spans (< k) of non-NAs 
     is.na.rle$longspan <- is.na.rle$values & is.na.rle$lengths > maxgap
     is.na.rle$shortspan <- !is.na.rle$values & is.na.rle$lengths < k
     
@@ -71,6 +71,7 @@ label_span_groups <- function(df, obsvar, maxgap, k) {
         if (grpnum == 0 | 
             is.na.rle$longspan[i] != is.prev.span.long | 
             is.na.rle$shortspan[i] != is.prev.span.short) {
+
             # Start a new span group by incrementing group counter
             grpnum <- grpnum + 1
         }
@@ -79,7 +80,7 @@ label_span_groups <- function(df, obsvar, maxgap, k) {
         is.prev.span.long <- is.na.rle$longspan[i]
         is.prev.span.short <- is.na.rle$shortspan[i]
         
-        # Determine the row number sequence comprising this span group
+        # Determine the row number sequence for this span group
         rownums <- (rownum + 1):(rownum + is.na.rle$lengths[i])
         
         # Label this span group and flag if this is a long or short span
@@ -87,7 +88,7 @@ label_span_groups <- function(df, obsvar, maxgap, k) {
         df[rownums, 'longspan'] <- is.na.rle$longspan[i]
         df[rownums, 'shortspan'] <- is.na.rle$shortspan[i]
         
-        # Increment row counter to last row number of this group
+        # Increment row counter to the last row number of this span group
         rownum <- rownum + is.na.rle$lengths[i]
     }
     df
@@ -122,7 +123,7 @@ flag_na_on_ends <- function(df, obsvar) {
 # A wrapper function for performing the labelling and flagging operations
 
 prep_rolling_median <- function(df, idvar, obsvar, maxgap, k) {
-    # Add new columns to dataframe to store group labels and boolean flags
+    # Add new columns to the dataframe to store group labels and boolean flags
     df <- df %>% 
         mutate(grpnum = as.integer(NA), 
                longspan = as.logical(FALSE),
@@ -158,7 +159,7 @@ calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar,
         df[!is.na(df[[obsvar]]) & df[[obsvar]] > upr_lim, obsvar] <- NA
     }
     
-    # Label and flag sequences by particpant, grouping for use with rollmedian
+    # Label and flag sequences by idvar, grouping for use with rollmedian
     df <- prep_rolling_median(df, idvar = 'noquestioner', obsvar = obsvar, 
                               maxgap = maxgap, k = k) 
     
@@ -166,7 +167,7 @@ calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar,
     nomedian <- df %>%
         filter(longspan == TRUE | shortspan == TRUE | natrim == TRUE)
     
-    # Calculate the rolling median
+    # Calculate the rolling median, grouping by the idvar and span group
     df <- df %>% 
         filter(longspan == FALSE & shortspan == FALSE & natrim == FALSE) %>% 
         group_by(noquestioner, grpnum) %>% 
@@ -177,12 +178,14 @@ calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar,
     df <- bind_rows(list(ungroup(df), nomedian)) %>% 
         arrange(noquestioner, timestamp)
     
-    # Clean up the dataset by removing and renaming variables
+    # Clean up the dataset by removing span label and flag variables
     df <- df %>% select(-grpnum, -longspan, -shortspan, -natrim)
+    
+    # Rename the orig. variable to rawvar and the smoothed variable to obsvar
     names(df)[names(df) == obsvar] <- rawvar
     names(df)[names(df) == medvar] <- obsvar
     
-    # Save results
+    # Save the results to a CSV file
     write.csv(df, outfile, row.names = FALSE)
 }
 
