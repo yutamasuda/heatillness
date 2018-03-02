@@ -193,12 +193,18 @@ calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar,
 # Main Routine
 # --------------------------------------------------------------------------
 
+# There is one function call to calc_rolling_median() for each data source.
+
 # For all datasets, the time window used for the rolling median is 3 minutes, 
 # so k is set to the number of observations which would span three minutes. 
 
 # If a run of NAs is one minute or more, then a rolling median will not be 
 # calculated for that span. Therefore, the maxgap variable is set to one 
 # observation less than the number of observations which span one minute.
+
+# Lastly, the Questemp sensor has an upper limit and a lower limit, so all
+# obsevered values outside of that range will be set to NA before the 
+# rolling median is calculated.
 
 # Enter the top-level data folder
 setwd('output_data')
