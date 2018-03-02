@@ -193,6 +193,13 @@ calc_rolling_median <- function(infile, outfile, obsvar, medvar, rawvar,
 # Main Routine
 # --------------------------------------------------------------------------
 
+# For all datasets, the time window used for the rolling median is 3 minutes, 
+# so k is set to the number of observations which would span three minutes. 
+
+# If a run of NAs is one minute or more, then a rolling median will not be 
+# calculated for that span. Therefore, the maxgap variable is set to one 
+# observation less than the number of observations which span one minute.
+
 # Enter the top-level data folder
 setwd('output_data')
 
