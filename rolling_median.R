@@ -23,7 +23,7 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed
-pacman::p_load(tidyr, zoo, tidyquant)
+pacman::p_load(tidyquant)
 
 # --------------------------------------------------------------------------
 # Functions

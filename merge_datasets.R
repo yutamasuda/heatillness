@@ -23,7 +23,7 @@ my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
 # Load the other packages, installing as needed
-pacman::p_load(data.table, stringr, chron, lubridate)
+pacman::p_load(data.table, stringr, chron)
 
 # Set timezone
 # Timezone: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
