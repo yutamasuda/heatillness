@@ -45,31 +45,31 @@ noqs <- str_pad(noqs, 6, pad = '0')
 # Create a custom theme
 my_theme <- theme_bw() + theme(legend.title = element_blank())
 
-# For each "noquestioner", create three x-y (point) plots, one for each of the 
+# For each "noquestioner", create three scatter plots, one for each of the 
 # three dependent variables, plotting both the raw observations and also the 
-# rolling median.
+# rolling median. Save the three plots for each "noquestioner" to a PNG file.
 for (noq in noqs) {
     df <- sensor_data %>% filter(noquestioner == noq)
     
     g1 <- ggplot(df, aes(time)) + scale_x_time() +
         geom_point(aes(y = ENMO_raw, color = 'raw'), 
-                   size = 0.75) +
+                   size = 0.75, alpha = 0.2) +
         geom_point(aes(y = ENMO, color = 'median'), 
-                   size = 1, alpha = 0.03) +
+                   size = 0.75, alpha = 0.1) +
         ylab('ENMO') + ggtitle(paste('ENMO for', noq)) + my_theme
     
     g2 <- ggplot(df, aes(time)) +
         geom_point(aes(y = heartrate_raw, colour = 'raw'), 
-                   size = 0.75) +
+                   size = 0.75, alpha = 0.2) +
         geom_point(aes(y = heartrate, color = 'median'), 
-                   size = 1, alpha = 0.03) +
+                   size = 0.75, alpha = 0.1) +
         ylab('heartrate') + ggtitle(paste('Heart Rate for', noq)) + my_theme
     
     g3 <- ggplot(df, aes(time)) +
         geom_point(aes(y = eartemp_raw, color = 'raw'), 
-                   size = 0.75) +
+                   size = 0.75, alpha = 0.2) +
         geom_point(aes(y = eartemp, colour = 'median'), 
-                   size = 1, alpha = 0.03) +
+                   size = 0.75, alpha = 0.1) +
         ylab('eartemp') + ggtitle(paste('Ear Temp for', noq)) + my_theme
     
     png(file.path('output_data', 'png', paste(noq, '.png', sep = '')))
