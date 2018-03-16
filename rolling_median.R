@@ -227,7 +227,9 @@ calc_rolling_median(infile  = 'Heart rate/Wahoo/wahoo_data.csv',
                     medvar  = 'heartrate_rm',
                     rawvar  = 'heartrate_raw',
                     maxgap  = 59,
-                    k       = 181
+                    k       = 181,
+                    lwr_lim = 40,
+                    upr_lim = 200
 )
 
 # Process polar data
@@ -237,7 +239,9 @@ calc_rolling_median(infile  = 'Heart rate/Polar/polar_data.csv',
                     medvar  = 'heartrate_rm',
                     rawvar  = 'heartrate_raw',
                     maxgap  = 59,
-                    k       = 181
+                    k       = 181,
+                    lwr_lim = 40,
+                    upr_lim = 200
 )
 
 # Process questemp data
