@@ -85,13 +85,17 @@ df <- df %>% group_by(timestamp = cut(timestamp, breaks = '1 sec')) %>%
 # insignificant digits due to floating-point round-off errors.
 setdiff(round(df$mg, 8), round(df$gx1000, 8))
 
+# --------
+# Reshape
+# --------
+
+# Reshape data frame from wide to long format to facilitate plot facet
+df.long <- df %>% gather(units, ENMO, c(g, mg, gx1000)) %>% 
+    mutate(units = recode(units, gx1000 = 'g*1000'))
+
 # -------------
 # Plot Results
 # -------------
-
-# Transform data frame from wide to long format to facilitate plot facet
-df.long <- df %>% gather(units, ENMO, c(g, mg, gx1000)) %>% 
-    mutate(units = recode(units, gx1000 = 'g*1000'))
 
 # Create plot with ggplot using a 1x3 facet arrangement
 plt <- suppressWarnings(
