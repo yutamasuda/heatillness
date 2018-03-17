@@ -59,15 +59,19 @@ timestamp[1]
 # Calculate ENMO
 # ---------------
 
+# See: https://github.com/wadpac/GGIR/blob/master/R/g.applymetrics.R
+
 # Calculate from raw x, y, z axis data in units of g
 g <- sqrt(raw_data$data$x ^ 2 + 
           raw_data$data$y ^ 2 + 
           raw_data$data$z ^ 2) - 1
+g[which(g < 0)] <- 0
 
 # Calculate from raw x, y, z axis data converted to units of mg
 mg <- sqrt((1000 * raw_data$data$x) ^ 2 + 
            (1000 * raw_data$data$y) ^ 2 + 
            (1000 * raw_data$data$z) ^ 2) - 1000
+mg[which(mg < 0)] <- 0
 
 # Create a data.frame to facilitate averaging in a 1-second epoch
 # and also perform a post-calculation conversion from g to mg
