@@ -1,10 +1,10 @@
 # The purpose of this script is to show how the Euclidean Norm Minus One (ENMO) 
 # is calculated from the raw x-, y-, and z-axis acceleration values. It is also 
-# meant to show that calculating ENMO in gravitational units (g) or milli-
-# gravitational units (mg) show equivalent plots, aside from the difference in 
-# y-axis (ENMO) scale. Lastly, it shows that the conversion to mg can occur 
-# either before or after the ENMO calculation is made, as the results match 
-# either way. This follows from the distributive property of multiplication.
+# meant to show that calculating ENMO acceleration in gravitational units (g) 
+# or milli-gravitational units (mg) show equivalent plots, aside from the 
+# difference in y-axis (ENMO) scale. Lastly, it shows that the conversion to mg 
+# can occur either before or after the ENMO calculation is made, as the results 
+# will match. This follows from the distributive property of multiplication.
 
 # Repository: https://github.com/yutamasuda/heatillness/
 # License: MIT - See the LICENSE file for more details
@@ -59,18 +59,27 @@ timestamp[1]
 # Calculate ENMO
 # ---------------
 
-# See: https://github.com/wadpac/GGIR/blob/master/R/g.applymetrics.R
+# Calculate the Euclidean Norm Minus One (ENMO) acceleration using the the raw 
+# x, y, and z-axis observations, which were read above in units of g using the 
+# g.cwaread() function.
 
-# Calculate from raw x, y, z axis data in units of g
+# See: https://github.com/wadpac/GGIR/blob/master/R/g.applymetrics.R
+# for the implementation of the ENMO calculation in the GGIR package.
+
+# Calculate ENMO from raw x, y, z axis data in units of g
 g <- sqrt(raw_data$data$x ^ 2 + 
           raw_data$data$y ^ 2 + 
           raw_data$data$z ^ 2) - 1
+
+# Set negative values to zero
 g[which(g < 0)] <- 0
 
-# Calculate from raw x, y, z axis data converted to units of mg
+# Calculate ENMO from raw x, y, z axis data converted to units of mg
 mg <- sqrt((1000 * raw_data$data$x) ^ 2 + 
            (1000 * raw_data$data$y) ^ 2 + 
            (1000 * raw_data$data$z) ^ 2) - 1000
+
+# Set negative values to zero
 mg[which(mg < 0)] <- 0
 
 # Create a data.frame to facilitate averaging in a 1-second epoch
