@@ -56,7 +56,8 @@ for (noq in noqs) {
                    size = 0.75, alpha = 0.2) +
         geom_point(aes(y = ENMO, color = 'median'), 
                    size = 0.75, alpha = 0.1) +
-        ylab('ENMO') + ggtitle(paste('ENMO for', noq)) + my_theme
+        ylab('activity (ENMO)') + ggtitle(paste('Activity (ENMO) for', noq)) + 
+            my_theme
     
     g2 <- ggplot(df, aes(time)) +
         geom_point(aes(y = heartrate_raw, colour = 'raw'), 
